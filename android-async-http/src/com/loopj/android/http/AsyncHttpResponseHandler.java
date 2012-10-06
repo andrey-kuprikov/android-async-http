@@ -66,7 +66,7 @@ import android.os.Looper;
  * });
  * </pre>
  */
-public class AsyncHttpResponseHandler {
+public class AsyncHttpResponseHandler<T> {
     protected static final int SUCCESS_MESSAGE = 0;
     protected static final int FAILURE_MESSAGE = 1;
     protected static final int START_MESSAGE = 2;
@@ -107,7 +107,7 @@ public class AsyncHttpResponseHandler {
      * Fired when a request returns successfully, override to handle in your own code
      * @param content the body of the HTTP response from the server
      */
-    public void onSuccess(String content) {}
+    public void onSuccess(T content) {}
 
     /**
      * Fired when a request fails to complete, override to handle in your own code
@@ -156,7 +156,7 @@ public class AsyncHttpResponseHandler {
     // Pre-processing of messages (in original calling thread, typically the UI thread)
     //
 
-    protected void handleSuccessMessage(String responseBody) {
+    protected void handleSuccessMessage(T responseBody) {
         onSuccess(responseBody);
     }
 
@@ -170,7 +170,7 @@ public class AsyncHttpResponseHandler {
     protected void handleMessage(Message msg) {
         switch(msg.what) {
             case SUCCESS_MESSAGE:
-                handleSuccessMessage((String)msg.obj);
+                handleSuccessMessage((T)msg.obj);
                 break;
             case FAILURE_MESSAGE:
                 Object[] repsonse = (Object[])msg.obj;

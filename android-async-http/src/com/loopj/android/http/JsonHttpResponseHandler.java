@@ -21,9 +21,7 @@ package com.loopj.android.http;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
-
-import android.os.Message;
+import com.google.gson.Gson;
 
 /**
  * Used to intercept and handle the responses from requests made using
@@ -36,22 +34,17 @@ import android.os.Message;
  * <p>
  * Additionally, you can override the other event methods from the
  * parent class.
+ * @param <T>
  */
-public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
-    protected static final int SUCCESS_JSON_MESSAGE = 100;
-
+public class JsonHttpResponseHandler<T> extends AsyncHttpResponseHandler<T> {
+    private final Class<T> resultType; 
+    
+    public JsonHttpResponseHandler(Class<T> resultType){
+    	this.resultType = resultType;
+    }
     //
     // Callbacks to be overridden, typically anonymously
     //
-
-    /**
-     * Fired when a request returns successfully and contains a json object
-     * at the base of the response string. Override to handle in your
-     * own code.
-     * @param response the parsed json object found in the server response (if any)
-     */
-    public void onSuccess(JSONObject response) {}
-
 
     /**
      * Fired when a request returns successfully and contains a json array
@@ -59,11 +52,11 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
      * own code.
      * @param response the parsed json array found in the server response (if any)
      */
-    public void onSuccess(JSONArray response) {}
-
-    public void onFailure(Throwable e, JSONObject errorResponse) {}
-    public void onFailure(Throwable e, JSONArray errorResponse) {}
-
+    
+    @Override
+    public void onSuccess(T response){
+    	
+    }
 
     //
     // Pre-processing of messages (executes in background threadpool thread)
@@ -72,8 +65,8 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
     @Override
     protected void sendSuccessMessage(String responseBody) {
         try {
-            Object jsonResponse = parseResponse(responseBody);
-            sendMessage(obtainMessage(SUCCESS_JSON_MESSAGE, jsonResponse));
+            T jsonResponse = parseResponse(responseBody);
+            sendMessage(obtainMessage(SUCCESS_MESSAGE, jsonResponse));
         } catch(JSONException e) {
             sendFailureMessage(e, responseBody);
         }
@@ -84,57 +77,15 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
     // Pre-processing of messages (in original calling thread, typically the UI thread)
     //
 
-    @Override
-    protected void handleMessage(Message msg) {
-        switch(msg.what){
-            case SUCCESS_JSON_MESSAGE:
-                handleSuccessJsonMessage(msg.obj);
-                break;
-            default:
-                super.handleMessage(msg);
-        }
-    }
-
-    protected void handleSuccessJsonMessage(Object jsonResponse) {
-        if(jsonResponse instanceof JSONObject) {
-            onSuccess((JSONObject)jsonResponse);
-        } else if(jsonResponse instanceof JSONArray) {
-            onSuccess((JSONArray)jsonResponse);
-        } else {
-            onFailure(new JSONException("Unexpected type " + jsonResponse.getClass().getName()));
-        }
-    }
-
-    protected Object parseResponse(String responseBody) throws JSONException {
-        Object result = null;
+    protected T parseResponse(String responseBody) throws JSONException {
+        T result = null;
+        
+        Gson gson = new Gson();
         //trim the string to prevent start with blank, and test if the string is valid JSON, because the parser don't do this :(. If Json is not valid this will return null
 		responseBody = responseBody.trim();
 		if(responseBody.startsWith("{") || responseBody.startsWith("[")) {
-			result = new JSONTokener(responseBody).nextValue();
-		}
-		if (result == null) {
-			result = responseBody;
+			result = gson.fromJson(responseBody, resultType);
 		}
 		return result;
-    }
-
-    @Override
-    protected void handleFailureMessage(Throwable e, String responseBody) {
-        try {
-            if (responseBody != null) {
-                Object jsonResponse = parseResponse(responseBody);
-                if(jsonResponse instanceof JSONObject) {
-                    onFailure(e, (JSONObject)jsonResponse);
-                } else if(jsonResponse instanceof JSONArray) {
-                    onFailure(e, (JSONArray)jsonResponse);
-                } else {
-                    onFailure(e, responseBody);
-                }
-            }else {
-                onFailure(e, "");
-            }
-        }catch(JSONException ex) {
-            onFailure(e, responseBody);
-        }
     }
 }

@@ -28,9 +28,7 @@ import org.apache.http.client.HttpResponseException;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.util.EntityUtils;
 
-import android.os.Handler;
 import android.os.Message;
-import android.os.Looper;
 
 /**
  * Used to intercept and handle the responses from requests made using

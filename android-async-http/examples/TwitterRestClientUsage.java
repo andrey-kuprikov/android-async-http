@@ -1,20 +1,14 @@
-import org.json.*;
 import com.loopj.android.http.*;
 
 class TwitterRestClientUsage {
     public void getPublicTimeline() {
-        TwitterRestClient.get("statuses/public_timeline.json", null, new JsonHttpResponseHandler() {
+        TwitterRestClient.get("statuses/public_timeline.json", null, new JsonHttpResponseHandler<TwitterPost[]>(TwitterPost[].class) {
             @Override
-            public void onSuccess(JSONArray timeline) {
-                try {
-                    JSONObject firstEvent = (JSONObject)timeline.get(0);
-                    String tweetText = firstEvent.getString("text");
+            public void onSuccess(TwitterPost[] timeline) {
+                TwitterPost firstEvent = timeline[0];
 
-                    // Do something with the response
-                    System.out.println(tweetText);
-                } catch(JSONException e) {
-                    e.printStackTrace();
-                }
+                // Do something with the response
+                System.out.println(firstEvent.tweetText);
             }
         });
     }
